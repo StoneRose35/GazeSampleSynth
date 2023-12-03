@@ -8,7 +8,6 @@
 
 DWORD WINAPI AudioThread(LPVOID lpParam);
 
-
 bool AudioEngine::initAudioEngine()
 {
     IMMDeviceEnumerator* pEnumerator;
@@ -45,6 +44,20 @@ bool AudioEngine::initAudioEngine()
         NULL, (void**)&pAudioClient);
 
     hr = pAudioClient->GetMixFormat(&pwfx);
+    if (pwfx->wFormatTag == WAVE_FORMAT_EXTENSIBLE)
+    {
+        WAVEFORMATEXTENSIBLE* wex;
+        wex = (WAVEFORMATEXTENSIBLE*)pwfx;
+        GUID sf = wex->SubFormat;
+        if (sf != KSDATAFORMAT_SUBTYPE_IEEE_FLOAT)
+        {
+            return false;
+        }
+    }
+    else if (pwfx->wFormatTag != WAVE_FORMAT_IEEE_FLOAT)
+    {
+        return false;
+    }
 
 
     hr = pAudioClient->Initialize(

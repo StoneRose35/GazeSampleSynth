@@ -4,6 +4,10 @@
 #include "Mmdeviceapi.h"
 #include "Audioclient.h"
 
+#define MIDI_AVAILABLE_MSK 0x200
+#define MIDI_NOTE_CHANGE_MSK 0x100
+#define MIDI_TAKEN_MSK 0x80
+
 typedef struct {
     DWORD actualDuration;
     DWORD flags;

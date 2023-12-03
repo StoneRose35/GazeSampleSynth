@@ -127,7 +127,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="AudioEngine.h" />
+    <ClInclude Include="audio\AdsrEnvelope.h" />
+    <ClInclude Include="audio\AudioEngine.h" />
+    <ClInclude Include="audio\FloatMath.h" />
+    <ClInclude Include="audio\MusicalSoundGenerator.h" />
+    <ClInclude Include="audio\SawOscillator.h" />
+    <ClInclude Include="audio\SecondOrderIirFilter.h" />
+    <ClInclude Include="audio\SimpleSubtractiveSynth.h" />
+    <ClInclude Include="audio\SineMonoSynth.h" />
+    <ClInclude Include="audio\SineOscillator.h" />
+    <ClInclude Include="audio\SoundGenerator.h" />
+    <ClInclude Include="audio\SoundProcessor.h" />
+    <ClInclude Include="audio\StilsonMoogFilter.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="GazeSampleSynth.h" />
     <ClInclude Include="Resource.h" />
@@ -135,7 +146,17 @@
     <ClInclude Include="TouchElement.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AudioEngine.cpp" />
+    <ClCompile Include="audio\AdsrEnvelope.cpp" />
+    <ClCompile Include="audio\AudioEngine.cpp" />
+    <ClCompile Include="audio\MusicalSoundGenerator.cpp" />
+    <ClCompile Include="audio\SawOscillator.cpp" />
+    <ClCompile Include="audio\SecondOrderIirFilter.cpp" />
+    <ClCompile Include="audio\SimpleSubtractiveSynth.cpp" />
+    <ClCompile Include="audio\SineMonoSynth.cpp" />
+    <ClCompile Include="audio\SineOscillator.cpp" />
+    <ClCompile Include="audio\SoundGenerator.cpp" />
+    <ClCompile Include="audio\SoundProcessor.cpp" />
+    <ClCompile Include="audio\StilsonMoogFilter.cpp" />
     <ClCompile Include="GazeSampleSynth.cpp" />
     <ClCompile Include="TouchElement.cpp" />
   </ItemGroup>
