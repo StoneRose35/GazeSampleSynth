@@ -19,8 +19,11 @@ public:
 	int getPosY();
 	bool isOnTouchElement(int posX,int posY) const;
 	void setActivated(bool act);
+	int getSoundGeneratorIndex();
+	void setSoundGeneratorIndex(int idx);
 private:
 	int width, height, cornerRadius, posX, posY;
+	int soundGeneratorIndex = -1;
 	bool isActivated;
 };
 

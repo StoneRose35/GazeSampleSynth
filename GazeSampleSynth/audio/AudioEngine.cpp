@@ -1,10 +1,13 @@
 #include "AudioEngine.h"
 #include "Windows.h"
 #include "Mmdeviceapi.h"
+#include <Functiondiscoverykeys_devpkey.h>
 #include "Audioclient.h"
+#include <cstdio>
 
-#define REFTIMES_PER_SEC  100000
+#define REFTIMES_PER_SEC   100000 // 10000000 
 #define REFTIMES_PER_MILLISEC  100
+
 
 DWORD WINAPI AudioThread(LPVOID lpParam);
 
@@ -13,11 +16,11 @@ bool AudioEngine::initAudioEngine()
     IMMDeviceEnumerator* pEnumerator;
     IMMDeviceCollection* pDevices;
     IMMDevice* audioDevice;
-    wchar_t strBfr[256];
     UINT nDevices;
     IAudioClient* pAudioClient = NULL;
     WAVEFORMATEX* pwfx = NULL;
     IAudioRenderClient* pRenderClient = NULL;
+    IPropertyStore* pPropertyStore = NULL;
     REFERENCE_TIME hnsRequestedDuration = REFTIMES_PER_SEC;
     REFERENCE_TIME hnsActualDuration;
     UINT32 bufferFrameCount;
@@ -25,6 +28,7 @@ bool AudioEngine::initAudioEngine()
     DWORD flags = 0;
     DWORD threadId;
     HRESULT hr;
+    PROPVARIANT name;
     const CLSID CLSID_MMDeviceEnumerator = __uuidof(MMDeviceEnumerator);
     const IID IID_IMMDeviceEnumerator = __uuidof(IMMDeviceEnumerator);
     const IID IID_IAudioClient = __uuidof(IAudioClient);
@@ -36,9 +40,18 @@ bool AudioEngine::initAudioEngine()
         (void**)&pEnumerator);
     hr = pEnumerator->EnumAudioEndpoints(eRender, DEVICE_STATE_ACTIVE, &pDevices);
     hr = pDevices->GetCount(&nDevices);
-    wsprintf(strBfr, L"got %d devices", nDevices);
-    OutputDebugString(strBfr);
+    printf("got %d devices\n", nDevices);
     hr = pDevices->Item(0, &audioDevice);
+
+
+    hr = pEnumerator->GetDefaultAudioEndpoint(
+        eRender, eConsole, &audioDevice);
+
+    hr = audioDevice->OpenPropertyStore(STGM_READ, &pPropertyStore);
+    PropVariantInit(&name);
+    hr = pPropertyStore->GetValue(PKEY_Device_FriendlyName, &name);
+    printf("Friendly Name of Audio Device: %S", name.pwszVal);
+    printf("\n");
 
     hr = audioDevice->Activate(IID_IAudioClient, CLSCTX_ALL,
         NULL, (void**)&pAudioClient);
@@ -89,7 +102,7 @@ bool AudioEngine::initAudioEngine()
     // Load the initial data into the shared buffer.
     //hr = pMySource->LoadData(bufferFrameCount, pData, &flags);
     // zero the entire buffer
-    for (int c = 0; c < ((pwfx->wBitsPerSample * pwfx->nChannels) >> 3)*bufferFrameCount; c++)
+    for (UINT c = 0; c < ((pwfx->wBitsPerSample * pwfx->nChannels) >> 3)*bufferFrameCount; c++)
     {
         *(pData + c) = 0;
     }
@@ -107,8 +120,11 @@ bool AudioEngine::initAudioEngine()
     audioData.bufferFrameCount = bufferFrameCount;
     audioData.flags = flags;
     audioData.renderClient = pRenderClient;
+    for (uint8_t c = 0; c < N_SOUNDGENERATORS; c++)
+    {
+        audioData.soundGenerators[c] = NULL;
+    }
 
-    hr = pAudioClient->Start();  // Start playing.
     thread = CreateThread(
         NULL,                   // default security attributes
         0,                      // use default stack size  
@@ -126,10 +142,33 @@ bool AudioEngine::stopAudioEngine()
     return true;
 }
 
+int AudioEngine::addSoundGenerator(MusicalSoundGenerator* generator)
+{
+    int res = -1;
+    for (uint8_t c = 0; c < N_SOUNDGENERATORS; c++)
+    {
+        if (audioData.soundGenerators[c] == NULL && res == -1)
+        {
+            audioData.soundGenerators[c] = generator;
+            res = c;
+        }
+    }
+    return res;
+}
+
+MusicalSoundGenerator* AudioEngine::getSoundGenerator(int idx)
+{
+    return audioData.soundGenerators[idx];
+}
+
 DWORD WINAPI AudioThread(LPVOID lpParam)
 {
     PAUDIODATA audioData = (PAUDIODATA)lpParam;
     UINT32 numFramesPadding, numFramesAvailable;
+    float audioSum = 0.0f, avgAudioSum=0.0f;
+    float* floatData;
+    BYTE* dataPtr;
+    audioData->audioClient->Start();
     while (audioData->flags != AUDCLNT_BUFFERFLAGS_SILENT)
     {
 
@@ -142,11 +181,28 @@ DWORD WINAPI AudioThread(LPVOID lpParam)
         numFramesAvailable = audioData->bufferFrameCount - numFramesPadding;
 
         // Grab all the available space in the shared buffer.
-        audioData->renderClient->GetBuffer(numFramesAvailable, &audioData->pData);
+        audioData->renderClient->GetBuffer(numFramesAvailable, &dataPtr);
 
+        floatData = (float*)dataPtr;
         // Get next 1/2-second of data from the audio source.
         // The show happens here!!!
         //hr = pMySource->LoadData(numFramesAvailable, pData, &flags);
+        avgAudioSum = 0.0f;
+        for (UINT q = 0; q < numFramesAvailable; q++)
+        {
+            audioSum = 0.0f;
+            for (uint8_t c = 0; c < N_SOUNDGENERATORS; c++)
+            {
+                if (audioData->soundGenerators[c] != NULL)
+                {
+                    audioSum += audioData->soundGenerators[c]->getNextSample();
+                }
+            }
+            //audioSum *= 0.0f;
+            avgAudioSum += audioSum * audioSum;
+            *(floatData + q * 2) = audioSum;
+            *(floatData + q * 2 + 1) = audioSum;
+        }
 
         audioData->renderClient->ReleaseBuffer(numFramesAvailable, audioData->flags);
 

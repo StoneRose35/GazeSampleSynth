@@ -60,10 +60,10 @@
     <ClInclude Include="audio\StilsonMoogFilter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="audio\AudioEngine.h">
+    <ClInclude Include="audio\MusicalSoundGenerator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="audio\MusicalSoundGenerator.h">
+    <ClInclude Include="audio\AudioEngine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

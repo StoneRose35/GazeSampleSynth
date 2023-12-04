@@ -1,5 +1,6 @@
 #include "Windows.h"
 #include "TouchElement.h"
+#include "audio/AudioEngine.h"
 
 bool TouchElement::paint(HDC hdc)
 {
@@ -82,4 +83,16 @@ int TouchElement::getPosX() {
 }
 int TouchElement::getPosY() {
 	return posY;
+}
+
+int TouchElement::getSoundGeneratorIndex() {
+	return soundGeneratorIndex;
+}
+
+void TouchElement::setSoundGeneratorIndex(int idx)
+{
+	if (idx >= -1 && idx < N_SOUNDGENERATORS)
+	{
+		soundGeneratorIndex = idx;
+	}
 }

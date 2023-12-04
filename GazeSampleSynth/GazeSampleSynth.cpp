@@ -4,7 +4,9 @@
 #include "framework.h"
 #include "GazeSampleSynth.h"
 #include "TouchElement.h"
-#include "AudioEngine.h"
+#include "audio/AudioEngine.h"
+#include "audio/MusicalSoundGenerator.h"
+#include "audio/SineMonoSynth.h"
 
 
 #define MAX_LOADSTRING 100
@@ -16,6 +18,7 @@ WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 
 // added manually, move to a final location later on
 TouchElement** touchElements;
+AudioEngine* ae;
 int lastTouchElementActivated = -1;
 
 // Forward declarations of functions included in this code module:
@@ -116,15 +119,25 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
        *(touchElements + c) = NULL;
    }
    TouchElement * te = new TouchElement();
+   SineMonoSynth* exampleSynth;
+   exampleSynth = new SineMonoSynth();
+
    touchElements[0] = te;
    te->setPosX(20);
    te->setPosY(20);
    te->setWidth(100);
    te->setHeight(100);
    te->setCornerRadius(5);
-
-   AudioEngine* ae = new AudioEngine();
+   te->setSoundGeneratorIndex(0);
+   ae = new AudioEngine();
    ae->initAudioEngine();
+   exampleSynth->setNote(0.0f);
+   exampleSynth->setAttack(0.05f);
+   exampleSynth->setDecay(0.0f);
+   exampleSynth->setSustain(1.0f);
+   exampleSynth->setRelease(0.95f);
+   ae->addSoundGenerator(exampleSynth);
+   
    HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
       CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
 
@@ -201,6 +214,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 {
                     (*(touchElements + c))->setActivated(true);
                     doRedraw = true;
+                    if ((*(touchElements + c))->getSoundGeneratorIndex() >= 0)
+                    {
+                        ae->getSoundGenerator((*(touchElements + c))->getSoundGeneratorIndex())->switchOn(1.0f);
+                    }
                     lastTouchElementActivated = c;
                 }
             }
@@ -214,6 +231,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         xPos = GET_X_LPARAM(lParam);
         yPos = GET_Y_LPARAM(lParam);
         doRedraw = false;
+        
         for (UINT8 c = 0; c < 64; c++)
         {
             if (*(touchElements + c) != NULL)
@@ -223,6 +241,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     (*(touchElements + c))->setActivated(false);
                     lastTouchElementActivated = -1;
                     doRedraw = true;
+                    if ((*(touchElements + c))->getSoundGeneratorIndex() >= 0)
+                    {
+                        ae->getSoundGenerator((*(touchElements + c))->getSoundGeneratorIndex())->switchOff(1.0f);
+                    }
                 }
             }
         }
@@ -233,6 +255,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     case WM_MOUSEMOVE:
         doRedraw=false;
+        
         if (lastTouchElementActivated >= 0)
         {
             if ((*(touchElements + lastTouchElementActivated)) != NULL)
@@ -242,8 +265,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 if (!(*(touchElements + lastTouchElementActivated))->isOnTouchElement(xPos, yPos))
                 {
                     (*(touchElements + lastTouchElementActivated))->setActivated(false);
-                    lastTouchElementActivated = -1;
                     doRedraw = true;
+                    if ((*(touchElements + lastTouchElementActivated))->getSoundGeneratorIndex() >= 0)
+                    {
+                        ae->getSoundGenerator((*(touchElements + lastTouchElementActivated))->getSoundGeneratorIndex())->switchOff(1.0f);
+                    }
+                    lastTouchElementActivated = -1;
                 }
                 
             }
